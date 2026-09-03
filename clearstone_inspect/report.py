@@ -8,7 +8,7 @@ try:
 except ImportError:
     anthropic = None
 
-from utils import seconds_to_mmss
+from utils import seconds_to_mmss, ensure_dir
 
 
 MARGIN_MM = 15
@@ -485,8 +485,10 @@ def generate_report(job_id, project_name, address, inspector_name, notes=""):
     pdf.cell(80, 6, "", border="B")
     pdf.ln(4)
 
-    report_filename = os.path.join("output",
-                                   f"inspection_report_{now.strftime('%Y-%m-%d')}.pdf")
+    job_output_dir = ensure_dir(os.path.join("jobs", job_id, "output"))
+    report_filename = os.path.join(
+        job_output_dir, f"inspection_report_{job_id}.pdf"
+    )
     pdf.output(report_filename)
 
     print(f"\nReport saved to: {report_filename}")

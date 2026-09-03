@@ -12,118 +12,106 @@
 
 <header class="topbar">
   <div class="topbar-left">
-    <span class="status-dot" id="status-dot"></span>
     <div class="logo">Clearstone <span>Inspect</span></div>
   </div>
-  <div class="topbar-actions">
-    <button id="btn-start" class="btn btn-primary">Start Inspection</button>
-    <button id="btn-report" class="btn btn-secondary">Generate Report</button>
-    <button id="btn-reports-tab" class="btn btn-outline">Reports</button>
-    <button id="btn-clear" class="btn btn-outline">Clear Session</button>
-  </div>
+  <nav class="view-switcher">
+    <button id="nav-upload" class="view-tab active" data-view="upload">Upload</button>
+    <button id="nav-jobs" class="view-tab" data-view="jobs">Jobs</button>
+    <button id="nav-reports" class="view-tab" data-view="reports">Reports</button>
+  </nav>
 </header>
 
-<main class="dashboard" id="dashboard-view">
-  <section class="panel log-panel">
-    <div class="log-header">
-      <h2 class="panel-title">Inspection Log</h2>
-      <div class="log-header-meta">
-        <span id="log-total">0</span> entries &middot; started <span id="log-session-start">—</span>
+<!-- ==================== UPLOAD VIEW ==================== -->
+<main class="view" id="view-upload">
+  <div class="upload-panel">
+    <h2 class="panel-title">Start a New Inspection</h2>
+
+    <div class="upload-fields">
+      <div class="field">
+        <label for="upload-project">Project Name</label>
+        <input id="upload-project" type="text" placeholder="123 Main St Renovation">
+      </div>
+      <div class="field">
+        <label for="upload-address">Address</label>
+        <input id="upload-address" type="text" placeholder="123 Main St, Springfield">
+      </div>
+      <div class="field">
+        <label for="upload-inspector">Inspector Name</label>
+        <input id="upload-inspector" type="text" placeholder="Jane Doe">
       </div>
     </div>
-    <div id="log-list" class="log-list">
-      <p class="log-empty">No detections yet. Start an inspection to begin.</p>
+
+    <div id="drop-zone" class="drop-zone">
+      <input id="file-input" type="file" accept=".mp4,.mov,.avi" hidden>
+      <div class="drop-zone-content">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 16V4M12 4l-5 5M12 4l5 5"/>
+          <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+        </svg>
+        <p class="drop-zone-text">Drop a walkthrough recording here, or click to browse</p>
+        <p class="drop-zone-hint">.mp4, .mov, .avi</p>
+      </div>
+      <div id="selected-file" class="selected-file hidden"></div>
     </div>
-  </section>
+
+    <div id="upload-progress-row" class="upload-progress-row hidden">
+      <div class="progress-bar">
+        <div id="upload-progress-fill" class="progress-fill" style="width: 0%"></div>
+      </div>
+      <span id="upload-progress-label" class="upload-progress-label">Uploading... 0%</span>
+    </div>
+
+    <button id="btn-start-analysis" class="btn btn-primary btn-block" disabled>Start Analysis</button>
+
+    <p class="upload-explainer">
+      Analysis takes 10 to 30 minutes depending on recording length.
+      You can close this page and come back.
+    </p>
+  </div>
 </main>
 
-<main class="reports-view hidden" id="reports-view">
+<!-- ==================== JOBS VIEW ==================== -->
+<main class="view hidden" id="view-jobs">
+  <div class="jobs-header">
+    <h2 class="panel-title">Inspection Jobs</h2>
+  </div>
+  <div id="jobs-list" class="jobs-list">
+    <p class="jobs-empty">No jobs yet. Upload a walkthrough recording to begin.</p>
+  </div>
+</main>
+
+<!-- ==================== FINDINGS VIEW ==================== -->
+<main class="view hidden" id="view-findings">
+  <div class="findings-header">
+    <button id="btn-findings-back" class="btn btn-outline btn-back">&larr; Back</button>
+    <div class="findings-header-main">
+      <h2 id="findings-project-name" class="panel-title">Project</h2>
+      <div class="findings-header-meta">
+        <span id="findings-overall-badge" class="badge">PASS</span>
+        <span id="findings-counts" class="findings-counts"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="findings-list" class="findings-list"></div>
+
+  <div class="transcript-toggle-row">
+    <button id="btn-toggle-transcript" class="btn btn-outline">Show Full Transcript</button>
+  </div>
+  <div id="transcript-panel" class="transcript-panel hidden"></div>
+</main>
+
+<!-- ==================== REPORTS VIEW ==================== -->
+<main class="view hidden" id="view-reports">
   <div class="reports-header">
-    <button id="btn-reports-back" class="btn btn-outline btn-back">&larr; Back</button>
     <h2 class="reports-title">Inspection Reports</h2>
   </div>
   <div id="reports-list" class="reports-list">
-    <p class="reports-empty">No reports generated yet. Complete an inspection and generate your first report.</p>
+    <p class="reports-empty">No reports generated yet. Complete a job to generate your first report.</p>
   </div>
 </main>
 
-<div id="transcription-bar" class="transcription-bar hidden">
-  <span class="transcription-dot" id="transcription-dot"></span>
-  <span id="transcription-label">Listening...</span>
-  <span id="transcription-text"></span>
-</div>
-
-<footer class="statusbar">
-  <div class="status-item">
-    <span id="wake-status">Voice Off</span>
-  </div>
-  <div class="status-item status-item-center">
-    <span class="status-label">Session</span>
-    <span id="session-timer" class="status-plain">00:00:00</span>
-  </div>
-  <div class="status-item status-item-right">
-    <span class="status-label">Camera</span>
-    <span id="camera-source" class="status-plain">None</span>
-  </div>
-</footer>
-
-<!-- Clear Session sub-menu modal -->
-<div id="clear-modal" class="modal-overlay hidden">
-  <div class="modal">
-    <button class="modal-close" id="btn-close-modal-x">&times;</button>
-    <h3>Clear Session</h3>
-    <p class="modal-sub">Choose how to handle the current inspection data.</p>
-
-    <button id="btn-new-inspection" class="btn btn-primary btn-block">
-      Start Brand New Inspection
-      <span class="btn-sub">Archives the current log and starts fresh</span>
-    </button>
-    <button id="btn-continue-inspection" class="btn btn-secondary btn-block">
-      Continue Existing Inspection
-      <span class="btn-sub">Keep adding to the current log</span>
-    </button>
-    <button id="btn-delete-inspections" class="btn btn-danger btn-block">
-      Delete All Inspections
-      <span class="btn-sub">Permanently erase logs, photos, and videos</span>
-    </button>
-
-    <div id="delete-confirm-row" class="delete-confirm hidden">
-      <input id="delete-confirm-input" type="text" placeholder='Type DELETE to confirm'>
-      <button id="btn-confirm-delete" class="btn btn-danger">Confirm Delete</button>
-    </div>
-
-    <button id="btn-close-modal" class="btn btn-outline btn-block">Cancel</button>
-  </div>
-</div>
-
-<!-- Generate Report modal — slides up from bottom -->
-<div id="report-modal" class="sheet-overlay hidden">
-  <div class="sheet">
-    <button class="modal-close" id="btn-close-report-x">&times;</button>
-    <h3>Generate Report</h3>
-
-    <div id="report-form">
-      <label>Project Name</label>
-      <input id="report-project" type="text" placeholder="123 Main St Renovation">
-      <label>Project Address</label>
-      <input id="report-address" type="text" placeholder="123 Main St, Springfield">
-      <label>Inspector Name</label>
-      <input id="report-inspector" type="text" placeholder="Jane Doe">
-      <label>Notes (optional)</label>
-      <input id="report-notes" type="text" placeholder="Additional notes">
-
-      <button id="btn-generate-report" class="btn btn-primary btn-block">Generate PDF</button>
-    </div>
-
-    <div id="report-viewer" class="report-viewer hidden">
-      <iframe id="report-iframe" class="report-iframe" title="Inspection report preview"></iframe>
-      <a id="btn-download-report" class="btn btn-secondary btn-block" href="#" target="_blank">Download PDF</a>
-      <button id="btn-new-report" class="btn btn-outline btn-block">Generate Another</button>
-    </div>
-  </div>
-</div>
-
-<!-- View Report modal — used by the Reports library's View button -->
+<!-- View Report modal — used by the Reports library and Jobs view -->
 <div id="view-report-modal" class="sheet-overlay hidden">
   <div class="sheet">
     <button class="modal-close" id="btn-close-view-report-x">&times;</button>

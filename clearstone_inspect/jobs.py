@@ -52,15 +52,21 @@ def write_status(job_id, state, progress=None, error=None, extra=None):
     Persists the current state/progress for a job to
     jobs/<job_id>/status.json. progress defaults to STAGE_PROGRESS[state]
     if not given explicitly.
+
+    Merges into whatever status.json already has rather than replacing
+    it outright — metadata written once (source_filename, project_name,
+    etc., from the upload) needs to survive every later stage
+    transition, not just the call that set it.
     """
     ensure_dir(os.path.join(JOBS_DIR, job_id))
 
-    status = {
-        "job_id": job_id,
-        "state": state,
-        "progress": progress if progress is not None else STAGE_PROGRESS.get(state, 0),
-        "updated_at": time.time(),
-    }
+    status = read_status(job_id)
+    if status.get("state") == "unknown":
+        status = {"job_id": job_id}
+
+    status["state"] = state
+    status["progress"] = progress if progress is not None else STAGE_PROGRESS.get(state, 0)
+    status["updated_at"] = time.time()
     if error:
         status["error"] = error
     if extra:
@@ -96,8 +102,15 @@ class JobQueue:
         self._thread = None
         self._lock = threading.Lock()
 
-    def enqueue(self, job_id, project_name="", address="", inspector_name="", notes=""):
-        write_status(job_id, "queued")
+    def enqueue(self, job_id, project_name="", address="", inspector_name="", notes="",
+                extra=None):
+        # Write display metadata (source filename, project name, etc.)
+        # into status.json in this same first write — write_status()
+        # merges on every later call, but the *first* write has to
+        # already contain this or a fast-moving background worker could
+        # overwrite status.json with a later stage before a second,
+        # separate metadata write ever lands.
+        write_status(job_id, "queued", extra=extra)
         self._queue.put({
             "job_id": job_id,
             "project_name": project_name,
