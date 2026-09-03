@@ -1,0 +1,19 @@
+# Model weights — downloaded automatically by ultralytics on first run,
+# never commit these.
+*.pt
+
+# Runtime-generated data
+output/
+uploads/
+jobs/
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+.venv/
+
+# Environment variables (e.g. ANTHROPIC_API_KEY)
+.env

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Clearstone Inspect — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="status-dot" id="status-dot"></span>
+    <div class="logo">Clearstone <span>Inspect</span></div>
+  </div>
+  <div class="topbar-actions">
+    <button id="btn-start" class="btn btn-primary">Start Inspection</button>
+    <button id="btn-report" class="btn btn-secondary">Generate Report</button>
+    <button id="btn-reports-tab" class="btn btn-outline">Reports</button>
+    <button id="btn-clear" class="btn btn-outline">Clear Session</button>
+  </div>
+</header>
+
+<main class="dashboard" id="dashboard-view">
+  <section class="panel log-panel">
+    <div class="log-header">
+      <h2 class="panel-title">Inspection Log</h2>
+      <div class="log-header-meta">
+        <span id="log-total">0</span> entries &middot; started <span id="log-session-start">—</span>
+      </div>
+    </div>
+    <div id="log-list" class="log-list">
+      <p class="log-empty">No detections yet. Start an inspection to begin.</p>
+    </div>
+  </section>
+</main>
+
+<main class="reports-view hidden" id="reports-view">
+  <div class="reports-header">
+    <button id="btn-reports-back" class="btn btn-outline btn-back">&larr; Back</button>
+    <h2 class="reports-title">Inspection Reports</h2>
+  </div>
+  <div id="reports-list" class="reports-list">
+    <p class="reports-empty">No reports generated yet. Complete an inspection and generate your first report.</p>
+  </div>
+</main>
+
+<div id="transcription-bar" class="transcription-bar hidden">
+  <span class="transcription-dot" id="transcription-dot"></span>
+  <span id="transcription-label">Listening...</span>
+  <span id="transcription-text"></span>
+</div>
+
+<footer class="statusbar">
+  <div class="status-item">
+    <span id="wake-status">Voice Off</span>
+  </div>
+  <div class="status-item status-item-center">
+    <span class="status-label">Session</span>
+    <span id="session-timer" class="status-plain">00:00:00</span>
+  </div>
+  <div class="status-item status-item-right">
+    <span class="status-label">Camera</span>
+    <span id="camera-source" class="status-plain">None</span>
+  </div>
+</footer>
+
+<!-- Clear Session sub-menu modal -->
+<div id="clear-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <button class="modal-close" id="btn-close-modal-x">&times;</button>
+    <h3>Clear Session</h3>
+    <p class="modal-sub">Choose how to handle the current inspection data.</p>
+
+    <button id="btn-new-inspection" class="btn btn-primary btn-block">
+      Start Brand New Inspection
+      <span class="btn-sub">Archives the current log and starts fresh</span>
+    </button>
+    <button id="btn-continue-inspection" class="btn btn-secondary btn-block">
+      Continue Existing Inspection
+      <span class="btn-sub">Keep adding to the current log</span>
+    </button>
+    <button id="btn-delete-inspections" class="btn btn-danger btn-block">
+      Delete All Inspections
+      <span class="btn-sub">Permanently erase logs, photos, and videos</span>
+    </button>
+
+    <div id="delete-confirm-row" class="delete-confirm hidden">
+      <input id="delete-confirm-input" type="text" placeholder='Type DELETE to confirm'>
+      <button id="btn-confirm-delete" class="btn btn-danger">Confirm Delete</button>
+    </div>
+
+    <button id="btn-close-modal" class="btn btn-outline btn-block">Cancel</button>
+  </div>
+</div>
+
+<!-- Generate Report modal — slides up from bottom -->
+<div id="report-modal" class="sheet-overlay hidden">
+  <div class="sheet">
+    <button class="modal-close" id="btn-close-report-x">&times;</button>
+    <h3>Generate Report</h3>
+
+    <div id="report-form">
+      <label>Project Name</label>
+      <input id="report-project" type="text" placeholder="123 Main St Renovation">
+      <label>Project Address</label>
+      <input id="report-address" type="text" placeholder="123 Main St, Springfield">
+      <label>Inspector Name</label>
+      <input id="report-inspector" type="text" placeholder="Jane Doe">
+      <label>Notes (optional)</label>
+      <input id="report-notes" type="text" placeholder="Additional notes">
+
+      <button id="btn-generate-report" class="btn btn-primary btn-block">Generate PDF</button>
+    </div>
+
+    <div id="report-viewer" class="report-viewer hidden">
+      <iframe id="report-iframe" class="report-iframe" title="Inspection report preview"></iframe>
+      <a id="btn-download-report" class="btn btn-secondary btn-block" href="#" target="_blank">Download PDF</a>
+      <button id="btn-new-report" class="btn btn-outline btn-block">Generate Another</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Report modal — used by the Reports library's View button -->
+<div id="view-report-modal" class="sheet-overlay hidden">
+  <div class="sheet">
+    <button class="modal-close" id="btn-close-view-report-x">&times;</button>
+    <h3>Inspection Report</h3>
+    <div class="report-viewer">
+      <iframe id="view-report-iframe" class="report-iframe" title="Inspection report preview"></iframe>
+      <a id="btn-download-view-report" class="btn btn-secondary btn-block" href="#" target="_blank">Download PDF</a>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

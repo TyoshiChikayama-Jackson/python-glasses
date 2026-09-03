@@ -1,0 +1,19 @@
+{
+  "violations": [
+    {
+      "id": "EW-001",
+      "name": "Exposed Electrical Wiring",
+      "description": "Wiring that is unsecured, uncapped, or missing junction box covers",
+      "visual_indicators": [
+        "Loose cables",
+        "Damaged jacket",
+        "Hanging wires",
+        "Open electrical boxes"
+      ],
+      "trade_responsible": "Licensed Electrician",
+      "code_reference": "NEC Article 300",
+      "urgency": "High - Stop Work if live current present",
+      "confidence_threshold": 0.75
+    }
+  ]
+}

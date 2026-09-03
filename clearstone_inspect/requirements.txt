@@ -1,0 +1,10 @@
+opencv-python
+numpy
+ultralytics
+fpdf2
+pygrabber
+vosk
+sounddevice
+openai-whisper
+flask
+anthropic
