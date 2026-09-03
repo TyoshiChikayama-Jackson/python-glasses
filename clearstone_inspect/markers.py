@@ -3,10 +3,19 @@ Reads a job's transcript and identifies moments of interest — markers —
 worth cross-referencing against visual evidence:
 
 1. "explicit" markers: any segment where the inspector says "Petra" —
-   a deliberate spoken flag, given the highest weight.
+   a deliberate, high-precision spoken flag, given the highest weight.
+   This is a shortcut, never a requirement: most real recordings won't
+   use it, and the keyword vocabulary below is what actually carries
+   detection.
 2. "keyword" markers: any segment containing a violation-related term,
-   either pulled from violations.json (name + visual_indicators) or a
-   general construction-issue vocabulary.
+   either pulled from violations.json (name + visual_indicators) or the
+   general construction-issue vocabulary — spoken conditions,
+   judgments, and trade/system terms an inspector would naturally use
+   while describing a problem, even without ever saying "Petra".
+
+A segment that matches a keyword is skipped (no marker created) if it
+also contains a "clear" phrase near that keyword (e.g. "the wiring
+looks good") — see _is_negated().
 """
 
 import json
@@ -16,22 +25,53 @@ import re
 WAKE_WORD = "petra"
 
 # General construction-issue vocabulary — catches spoken concerns even
-# when they don't match a specific violations.json entry.
-GENERAL_ISSUE_KEYWORDS = [
-    "exposed",
-    "missing",
-    "cracked",
-    "loose",
-    "damaged",
-    "unsecured",
-    "uncapped",
-    "leaking",
-    "improper",
-    "not to code",
-    "needs",
-    "violation",
-    "hazard",
+# when they don't match a specific violations.json entry. Organized by
+# category for readability; find_markers() only cares about the flat
+# set below.
+CONDITION_KEYWORDS = [
+    "exposed", "missing", "cracked", "loose", "damaged", "unsecured",
+    "uncapped", "leaking", "rusted", "rotted", "warped", "bent",
+    "broken", "split", "gap", "gaps", "hole", "uneven", "sagging",
+    "bowed", "out of plumb", "out of level", "not sealed", "unsealed",
+    "improperly", "incorrectly", "temporary",
 ]
+
+JUDGMENT_KEYWORDS = [
+    "violation", "hazard", "unsafe", "fails", "failed", "not to code",
+    "code issue", "needs replacing", "needs repair", "needs to be redone",
+    "has to come out", "won't pass", "red flag", "problem here",
+    "issue here", "concern", "deficiency", "punch list", "callback",
+]
+
+TRADE_SYSTEM_KEYWORDS = [
+    "wiring", "wire", "cable", "conduit", "junction box", "outlet",
+    "receptacle", "panel", "breaker", "grounding", "plumbing", "drain",
+    "supply line", "p-trap", "vent stack", "hvac", "ductwork", "framing",
+    "stud", "joist", "header", "rafter", "truss", "drywall", "insulation",
+    "vapor barrier", "flashing", "roofing", "shingle", "subfloor",
+    "footing", "foundation", "grading", "egress", "handrail", "guardrail",
+    "riser", "tread", "firestop", "fire block",
+]
+
+GENERAL_ISSUE_KEYWORDS = (
+    CONDITION_KEYWORDS + JUDGMENT_KEYWORDS + TRADE_SYSTEM_KEYWORDS
+)
+
+# Phrases that mean "this is fine" — if one of these appears in the same
+# segment as a matched keyword, the keyword is treated as cleared rather
+# than flagged. This stops "the wiring looks good" from being read the
+# same as "the wiring is exposed".
+CLEAR_PHRASES = [
+    "looks good", "no issues", "no issue", "that's fine", "thats fine",
+    "passes", "all set", "clean", "no problem",
+]
+
+
+def _is_negated(text_lower):
+    """Returns True if text_lower contains a "this is fine" phrase,
+    meaning any keyword match in this same segment should be treated as
+    cleared rather than flagged."""
+    return any(phrase in text_lower for phrase in CLEAR_PHRASES)
 
 
 def load_violation_keywords(violations_path="violations.json"):
@@ -108,6 +148,12 @@ def find_markers(job_id=None, segments=None, violations_path="violations.json"):
                 "type": "explicit",
                 "weight": 3,
             })
+            continue
+
+        if _is_negated(text_lower):
+            # A "this is fine" phrase is present in this segment — treat
+            # any keyword match here as cleared, not flagged (e.g. "the
+            # wiring looks good" should not create a marker).
             continue
 
         matched_violation = None

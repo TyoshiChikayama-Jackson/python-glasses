@@ -100,7 +100,27 @@ def _build_ai_summary_input(findings, transcript_segments):
     Turns the findings and transcript into a compact plain-text summary
     suitable for sending to Claude — full detail, but without embedding
     binary data (photos) or internal file paths.
+
+    When findings is empty, this deliberately says so explicitly rather
+    than leaving a blank "Findings:" section — Claude is told the
+    walkthrough was clean so it can write a summary that reflects the
+    transcript alone, describing what was observed instead of inventing
+    or implying violations that were never found.
     """
+    if not findings:
+        lines = [
+            "No violations were identified during this walkthrough. "
+            "Base the summary entirely on what the inspector describes "
+            "in the transcript below — describe the site condition and "
+            "what was observed, not on any violation."
+        ]
+        if transcript_segments:
+            lines.append("")
+            lines.append("Full walkthrough transcript:")
+            for seg in transcript_segments:
+                lines.append(f"[{seconds_to_mmss(seg['start'])}] {seg['text']}")
+        return "\n".join(lines)
+
     lines = ["Findings:"]
     for i, finding in enumerate(findings, 1):
         status = finding.get("status", "PASS")
@@ -352,13 +372,13 @@ def generate_report(job_id, project_name, address, inspector_name, notes=""):
     Builds the inspection report PDF for one job from
     jobs/<job_id>/findings.json (written by correlate.py) and
     jobs/<job_id>/transcript.json (written by transcribe.py).
+
+    A clean walkthrough (zero findings) still produces a report — a
+    valid "no violations identified" result is not the same as "nothing
+    to report." The report always generates; only its content changes
+    when there's nothing to flag.
     """
     findings = load_findings(job_id)
-
-    if not findings:
-        print("No findings to report.")
-        return None
-
     transcript_segments = load_transcript(job_id)
 
     now = datetime.now()
@@ -451,15 +471,29 @@ def generate_report(job_id, project_name, address, inspector_name, notes=""):
     pdf.cell(0, 6, f"PASS: {pass_count}", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(3)
 
-    # ---- FINDINGS ----
+    # ---- FINDINGS (or "No Violations Identified" when the walkthrough is clean) ----
     pdf.line(MARGIN_MM, pdf.get_y(), right_edge, pdf.get_y())
     pdf.ln(4)
-    pdf.set_font("Helvetica", "B", FONT_SECTION)
-    pdf.cell(0, 8, "Findings", new_x="LMARGIN", new_y="NEXT")
-    pdf.ln(1)
 
-    for i, finding in enumerate(findings, 1):
-        _render_finding_card(pdf, i, finding)
+    if not findings:
+        pdf.set_font("Helvetica", "B", FONT_SECTION)
+        pdf.cell(0, 8, "No Violations Identified", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+        pdf.set_font("Helvetica", "", FONT_BODY)
+        pdf.multi_cell(
+            0, 6,
+            "This walkthrough was analyzed and no violations were "
+            "identified. The full transcript is included below for "
+            "reference."
+        )
+        pdf.ln(3)
+    else:
+        pdf.set_font("Helvetica", "B", FONT_SECTION)
+        pdf.cell(0, 8, "Findings", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(1)
+
+        for i, finding in enumerate(findings, 1):
+            _render_finding_card(pdf, i, finding)
 
     # ---- TRANSCRIPT ----
     _render_transcript_section(pdf, transcript_segments)
